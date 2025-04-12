@@ -1,0 +1,151 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include "pitches.h"
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+#define OLED_RESET     -1
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#define BUZZER_PIN 8
+#define BUTTON_PIN 4
+
+int soundIndex = 0;
+int totalSounds = 9;
+
+bool lastButtonState = HIGH;
+bool currentButtonState;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;
+
+// Sound names for display
+const char* soundNames[] = {
+  "Lightsaber On",
+  "Saber Clash",
+  "Blaster Fire",
+  "Force Push",
+  "Lightsaber Off",
+  "R2-D2",
+  "Chewbacca",
+  "Vader Breathing",
+  "TIE Fighter"
+};
+
+void setup() {
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    while (true); // OLED not found
+  }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  showSoundName(soundIndex);
+}
+
+void loop() {
+  currentButtonState = digitalRead(BUTTON_PIN);
+
+  if (currentButtonState == LOW && lastButtonState == HIGH && (millis() - lastDebounceTime) > debounceDelay) {
+    playSound(soundIndex);
+    soundIndex = (soundIndex + 1) % totalSounds;
+    showSoundName(soundIndex);
+    lastDebounceTime = millis();
+  }
+
+  lastButtonState = currentButtonState;
+}
+
+void showSoundName(int index) {
+  display.clearDisplay();
+  display.setCursor(0, 10);
+  display.println(soundNames[index]);
+  display.display();
+}
+
+// ---------- SOUND FX FUNCTIONS ----------
+
+void playSound(int index) {
+  switch(index) {
+    case 0: lightsaberOn(); break;
+    case 1: lightsaberClash(); break;
+    case 2: blaster(); break;
+    case 3: forcePush(); break;
+    case 4: lightsaberOff(); break;
+    case 5: r2d2(); break;
+    case 6: chewbacca(); break;
+    case 7: vaderBreath(); break;
+    case 8: tieFighter(); break;
+  }
+}
+
+void lightsaberOn() {
+  for (int i = 200; i < 800; i += 10) {
+    tone(BUZZER_PIN, i, 10);
+    delay(5);
+  }
+  noTone(BUZZER_PIN);
+}
+
+void lightsaberClash() {
+  tone(BUZZER_PIN, 1000, 100); delay(120);
+  tone(BUZZER_PIN, 800, 80); delay(100);
+  noTone(BUZZER_PIN);
+}
+
+void blaster() {
+  for (int i = 0; i < 3; i++) {
+    tone(BUZZER_PIN, 900, 60); delay(80);
+    noTone(BUZZER_PIN); delay(40);
+  }
+}
+
+void forcePush() {
+  for (int i = 600; i >= 100; i -= 20) {
+    tone(BUZZER_PIN, i, 20); delay(15);
+  }
+  noTone(BUZZER_PIN);
+}
+
+void lightsaberOff() {
+  for (int i = 800; i > 200; i -= 10) {
+    tone(BUZZER_PIN, i, 10); delay(5);
+  }
+  noTone(BUZZER_PIN);
+}
+
+void r2d2() {
+  tone(BUZZER_PIN, NOTE_B6, 100); delay(100);
+  tone(BUZZER_PIN, NOTE_E7, 100); delay(100);
+  tone(BUZZER_PIN, NOTE_D7, 100); delay(100);
+  tone(BUZZER_PIN, NOTE_G6, 200); delay(200);
+  noTone(BUZZER_PIN);
+}
+
+void chewbacca() {
+  for (int i = 0; i < 3; i++) {
+    tone(BUZZER_PIN, 400 + random(100), 100); delay(120);
+  }
+  for (int i = 0; i < 2; i++) {
+    tone(BUZZER_PIN, 300 + random(80), 150); delay(170);
+  }
+  noTone(BUZZER_PIN);
+}
+
+void vaderBreath() {
+  tone(BUZZER_PIN, 100, 500); delay(700);
+  tone(BUZZER_PIN, 80, 500); delay(700);
+  noTone(BUZZER_PIN);
+}
+
+void tieFighter() {
+  for (int i = 1000; i > 200; i -= 25) {
+    tone(BUZZER_PIN, i, 10); delay(8);
+  }
+  for (int i = 200; i < 900; i += 30) {
+    tone(BUZZER_PIN, i, 10); delay(8);
+  }
+  noTone(BUZZER_PIN);
+}
